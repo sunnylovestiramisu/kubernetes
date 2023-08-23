@@ -316,6 +316,9 @@ type KubeletVolumeHost interface {
 
 	// Returns the credential bundle for the specified podCertificate projected volume source.
 	GetPodCertificateCredentialBundle(ctx context.Context, namespace, podName, podUID, volumeName string, sourceIndex int) ([]byte, []byte, error)
+
+	// WaitForNodeRegistrationCompleted is a helper function that waits for node is in registrationCompleted state
+	WaitForNodeRegistrationCompleted(ctx context.Context) error
 }
 
 // CSIDriverVolumeHost is a volume host that has access to CSIDriverLister
