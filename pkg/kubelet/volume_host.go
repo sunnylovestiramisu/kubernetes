@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"runtime"
+	"time"
 
 	"k8s.io/klog/v2"
 	"k8s.io/mount-utils"
@@ -185,6 +186,26 @@ func (kvh *kubeletVolumeHost) WaitForCacheSync() error {
 	}
 
 	return nil
+}
+
+// WaitForNodeRegistrationCompleted is a helper function that waits for node is in registrationCompleted state
+func (kvh *kubeletVolumeHost) WaitForNodeRegistrationCompleted(ctx context.Context) error {
+	err := wait.PollUntilContextCancel(ctx, time.Second, true, kvh.verifyNodeRegistrationCompleted())
+	if err != nil {
+		// In theory this is unreachable, but just in case:
+		return fmt.Errorf("faled to WaitForNodeRegistrationCompleted: %v", err)
+	}
+	return nil
+}
+
+func (kvh *kubeletVolumeHost) verifyNodeRegistrationCompleted() wait.ConditionWithContextFunc {
+	return func(_ context.Context) (done bool, err error) {
+		if kvh.kubelet.registrationCompleted {
+			return true, nil
+		}
+		klog.V(2).InfoS("Still waiting for node to complete registration")
+		return false, nil
+	}
 }
 
 func (kvh *kubeletVolumeHost) NewWrapperMounter(
